@@ -19,7 +19,7 @@ from your `World`, and create a scene from it!
 let my_scene = scene_from_query_filter::<(
     With<ComponentA>,
     Without<ComponentB>,
-)>(&mut world, &type_registry);
+)>(&mut world);
 
 // quick: same thing, but only with specific components
 let my_scene = scene_from_query_components::<
@@ -27,7 +27,7 @@ let my_scene = scene_from_query_components::<
     (&ComponentA, &ComponentB),
     // additional filter, to select only specific entities
     (With<IWantInMyScene>, Without<DevOnlyDoNotExport>),
->(&mut world, &type_registry);
+>(&mut world);
 ```
 
 Then you can just serialize it (say, to create scene asset files), or
@@ -76,5 +76,5 @@ builder.add_components_to_entities::<
 >(special_entities.iter());
 
 // now that we have selected everything, make a scene from it!
-let my_scene = builder.build_scene(&type_registry);
+let my_scene = builder.build_scene();
 ```

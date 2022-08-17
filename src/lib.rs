@@ -22,14 +22,13 @@ use bevy::utils::{HashMap, HashSet};
 /// try [`SceneBuilder`].
 pub fn scene_from_query_components<Q, F>(
     world: &mut World,
-    type_registry: &TypeRegistry,
 ) -> DynamicScene
 where
     Q: ComponentList,
     F: ReadOnlyWorldQuery + 'static,
 {
-    let type_registry = type_registry.read();
     let mut ss = SystemState::<Query<Entity, (Q::QueryFilter, F)>>::new(world);
+    let type_registry = world.get_resource::<TypeRegistry>().unwrap().read();
     let q = ss.get(world);
 
     let entities = q.iter().map(|entity| {
@@ -74,13 +73,12 @@ where
 /// try [`SceneBuilder`].
 pub fn scene_from_query_filter<F>(
     world: &mut World,
-    type_registry: &TypeRegistry,
 ) -> DynamicScene
 where
     F: ReadOnlyWorldQuery + 'static,
 {
-    let type_registry = type_registry.read();
     let mut ss = SystemState::<Query<Entity, F>>::new(world);
+    let type_registry = world.get_resource::<TypeRegistry>().unwrap().read();
     let q = ss.get(world);
 
     let entities = q.iter().map(|entity| {
@@ -286,8 +284,8 @@ impl<'w> SceneBuilder<'w> {
     ///
     /// All the relevant data will be copied from the `World` that was provided
     /// when the [`SceneBuilder`] was created.
-    pub fn build_scene(&self, type_registry: &TypeRegistry) -> DynamicScene {
-        let type_registry = type_registry.read();
+    pub fn build_scene(&self) -> DynamicScene {
+        let type_registry = self.world.get_resource::<TypeRegistry>().unwrap().read();
 
         let entities = self.ec.iter().map(|(entity, csel)| {
             let get_reflect_by_id = |id|
