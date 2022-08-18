@@ -24,7 +24,9 @@ let my_scene = scene_from_query_filter::<(
 // quick: same thing, but only with specific components
 let my_scene = scene_from_query_components::<
     // the components to include
-    (&ComponentA, &ComponentB),
+    // (require A and B, only select entities that have them)
+    // (C is optional, include it if it is present)
+    (&ComponentA, &ComponentB, Option<&ComponentC>),
     // additional filter, to select only specific entities
     (With<IWantInMyScene>, Without<DevOnlyDoNotExport>),
 >(&mut world);
@@ -63,7 +65,7 @@ builder.add_from_query_filter::<With<GameItem>>();
 // only specific components for these entities
 builder.add_with_components::<
     // the components to select
-    (&Transform, &Health),
+    (&Transform, &Health, &BaseStats, Option<&SpecialAbility>),
     // query filter to select entities
     Or<(With<Player>, With<Enemy>)>
 >();

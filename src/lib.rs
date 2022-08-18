@@ -326,6 +326,11 @@ impl<'w> SceneBuilder<'w> {
     }
 }
 
+/// Represents a selection of components to export into a scene.
+///
+/// Works similar to Bevy's queries, but only immutable access
+/// (`&T`), optional access (`Option<&T>`), and tuples to combine
+/// multiple types, are supported.
 pub trait ComponentList {
     type QueryFilter: ReadOnlyWorldQuery + 'static;
     fn do_component_ids<F: FnMut(ComponentId)>(world: &World, f: &mut F);
@@ -335,7 +340,19 @@ impl<T: Component + Reflect> ComponentList for &T {
     type QueryFilter = With<T>;
     #[inline]
     fn do_component_ids<F: FnMut(ComponentId)>(world: &World, f: &mut F) {
-        f(world.component_id::<T>().expect("Component not in World"));
+        if let Some(id) = world.component_id::<T>() {
+            f(id);
+        }
+    }
+}
+
+impl<T: Component + Reflect> ComponentList for Option<&T> {
+    type QueryFilter = ();
+    #[inline]
+    fn do_component_ids<F: FnMut(ComponentId)>(world: &World, f: &mut F) {
+        if let Some(id) = world.component_id::<T>() {
+            f(id);
+        }
     }
 }
 
