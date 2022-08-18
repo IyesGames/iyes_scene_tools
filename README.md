@@ -1,5 +1,11 @@
 # Helpers for working with Bevy Scenes
 
+Version compatibility table:
+
+|Bevy Version|Crate Version|
+|------------|-------------|
+|`0.8`       |`0.1`        |
+
 ## What is this about?
 
 For the uninitiated: Bevy Scenes are a way to store some predefined Bevy ECS
