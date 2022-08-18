@@ -154,3 +154,109 @@ bevy_utils = { path = "../bevy/crates/bevy_utils" }
 bevy_asset = { path = "../bevy/crates/bevy_asset" }
 # … and any others (refer to your dependencies' Cargo.toml) …
 ```
+
+## "Blueprints" Pattern
+
+This is a recommendation for how to make your workflow more flexible, and
+get the most usefulness out of Bevy scenes.
+
+---
+
+There are many component types in Bevy that represent internal state
+computed at runtime, such as: `GlobalTransform`, `ComputedVisibility`,
+`Interaction`, etc….
+
+Their values don't need to be persisted in scenes. You might want to omit
+them. This will also help your scenes be less bloated.
+
+You might also want to omit other components of your choice, if you prefer
+to set them up using code, or initialize them to defaults.
+
+```rust
+let mut builder = SceneBuilder::new(world);
+
+// add our game entities
+builder.add_from_query_filter::<With<Enemy>>();
+builder.add_from_query_filter::<With<Player>>();
+builder.add_from_query_filter::<With<Powerup>>();
+// …
+
+// for our UI Nodes, only persist `Style`, `UiColor`, `Text`, `Button`
+builder.add_with_components::<
+    (&Style, &UiColor, Option<&Text>, Option<&Button>),
+    With<Node>
+>();
+
+// never include these components in any entity
+builder.ignore_components::<
+    (&GlobalTransform, &Visibility, &ComputedVisibility, &CalculatedSize)
+>();
+
+let my_scene = builder.build_scene();
+```
+
+---
+
+If you are creating such a "sparse" scene (we can call it "blueprint"),
+that only has some of the components and is missing others, you can write
+some code to populate the entities to "complete" their setup.
+
+This is easily done using a system with an `Added` query filter. This way,
+you detect when such entities are spawned into the world, and you can do
+any additional setup on them using code.
+
+```rust
+// ensure everything with a transform has all the transform/visibility stuff
+fn setup_spatial(
+    mut commands: Commands,
+    // detect anything that was just added and needs setup
+    q_new: Query<
+        (Entity, &Transform),
+        (Added<Transform>, Without<GlobalTransform>)
+    >,
+) {
+    for (e, transform) in q_new.iter() {
+        commands.entity(e).insert_bundle(SpatialBundle {
+            // preserve the transform
+            transform,
+            ..Default::default()
+        });
+    }
+}
+
+/// complete the setup of our UI
+/// (btw, this could be the starting point for the development
+/// of a nice automatic theming system ;) hehe)
+fn setup_ui(
+    mut commands: Commands,
+    // detect anything that was just added and needs setup
+    q_new: Query<
+        (Entity, &Style, Option<&UiColor>, Option<&Text>, Option<&Button>),
+        (Added<Style>, Without<Node>)
+    >,
+) {
+    for (e, style, color, text, button) in q_new.iter() {
+        if let Some(text) = text {
+            commands.entity(e).insert_bundle(TextBundle {
+                text: text.clone(),
+                style: style.clone(),
+                ..Default::default()
+            });
+        } else if let Some(_button) = button {
+            // (`Button` is just a marker)
+            commands.entity(e).insert_bundle(ButtonBundle {
+                style: style.clone(),
+                color: color.cloned().unwrap_or(UiColor(Color::NONE)),
+                ..Default::default()
+            });
+        } else {
+            // this is a generic ui node
+            commands.entity(e).insert_bundle(NodeBundle {
+                style: style.clone(),
+                color: color.cloned().unwrap_or(UiColor(Color::NONE)),
+                ..Default::default()
+            });
+        }
+    }
+}
+```
