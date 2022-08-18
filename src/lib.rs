@@ -130,6 +130,7 @@ enum ComponentSelection {
 pub struct SceneBuilder<'w> {
     world: &'w mut World,
     ec: HashMap<Entity, ComponentSelection>,
+    ignored: HashSet<ComponentId>,
 }
 
 impl<'w> SceneBuilder<'w> {
@@ -141,7 +142,25 @@ impl<'w> SceneBuilder<'w> {
         SceneBuilder {
             world,
             ec: Default::default(),
+            ignored: Default::default(),
         }
+    }
+
+    /// Add components to the set of components to be ignored
+    ///
+    /// This applies only to entities without explicit component selections.
+    ///
+    /// If you have explicitly added any of them to specific entities, they
+    /// will still be exported to the scene.
+    ///
+    /// If an entity was added in "all components" mode, then `.build_scene()`
+    /// will skip any of these components that it encounters.
+    pub fn ignore_components<Q>(&mut self) -> &mut Self
+    where
+        Q: ComponentList,
+    {
+        Q::do_component_ids(self.world, &mut |id| {self.ignored.insert(id);});
+        self
     }
 
     /// Add all entities that match the given query filter
@@ -303,6 +322,7 @@ impl<'w> SceneBuilder<'w> {
                         .and_then(|eloc| self.world.archetypes().get(eloc.archetype_id))
                         .into_iter()
                         .flat_map(|a| a.components())
+                        .filter(|id| !self.ignored.contains(&id))
                         .filter_map(get_reflect_by_id)
                         .collect()
                 },

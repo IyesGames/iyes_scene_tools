@@ -77,6 +77,11 @@ builder.add_components_to_entities::<
     &Transform 
 >(special_entities.iter());
 
+// we can ignore some components;
+// they will never be implicitly included, unless they were
+// explicitly selected for specific entities
+builder.ignore_components::<(&GlobalTransform, &ComputedVisibility)>();
+
 // now that we have selected everything, make a scene from it!
 let my_scene = builder.build_scene();
 ```
