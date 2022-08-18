@@ -59,13 +59,25 @@ let my_scene = scene_from_query_components::<
 >(&mut world);
 ```
 
-Then you can just serialize it (say, to create scene asset files), or
-spawn / instantiate it, etc…
+If you would like to serialize it (say, to create scene asset files):
 
 ```rust
-// and now you can serialize it if you want
-println!("{}", my_scene.serialize_ron(type_registry).unwrap());
+// need the type registry
+let type_registry = world.resource::<TypeRegistry>();
 
+// output the contents as a String
+let data = my_scene.serialize_ron(type_registry).unwrap();
+
+// create a scene file (ending in `.scn.ron`)
+match std::fs::write(&path, &data) {
+    Ok(()) => info!("Scene Saved to {:?}", path),
+    Err(e) => error!("Could not save scene to {:?}: {}", path, e),
+}
+```
+
+Or if you just want to use it directly:
+
+```rust
 // or add it to your app's assets, so you can use it
 // (using `ResMut<Assets<DynamicScene>>`)
 let handle = assets.add(my_scene);
