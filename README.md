@@ -1,17 +1,44 @@
 # Helpers for working with Bevy Scenes
 
+## What is this about?
+
+For the uninitiated: Bevy Scenes are a way to store some predefined Bevy ECS
+data (arbitrary entities with components on them) and be able to instantiate
+them later, as many times as you want!
+
+You can use Scenes for many use cases:
+ - Loading your game levels/maps (or parts of them)
+ - Preconfigured game units/modules (some other engines call this "prefabs")
+ - Saving game state
+ - …
+
+Until now, creating Bevy scenes, and working with the Bevy
+scene format, was very unapproachable. While Bevy makes
+it easy to use existing scenes in your game (just spawn them with
+[`DynamicSceneBundle`](https://docs.rs/bevy/latest/bevy/scene/struct.DynamicSceneBundle.html)),
+there was no easy way to create them. Bevy offers nothing built-in for easily
+exporting things into a scene, and no APIs to help you create your scenes.
+
+Thanks to this crate, you can now easily create your own scenes, containing
+whatever you want, by exporting a custom selection of things from any Bevy app!
+
 ## Scene Export
 
-The primary purpose of this crate is to give you a nice API for creating /
-exporting Bevy Scenes.
-
-You can now easily create Bevy `DynamicScene`s that include whatever
-exact selection of entities and components you want!
+You can create Bevy [`DynamicScene`](https://docs.rs/bevy/latest/bevy/scene/struct.DynamicScene.html)s
+that include whatever exact selection of entities and components you want!
 
 The selections can be done with a syntax similar to Bevy Queries.
 
 This create will then copy the relevant data, based on your selections,
 from your `World`, and create a scene from it!
+
+There are two "modes" for component selection:
+ - "all components": when you just select entities, without specifying components.
+   When generating the scene, each entity will be scanned to autodetect
+   all [compatible](#warning) components and include them in the scene
+ - "explicit component list": you specify exactly what components to include
+   (they may be required or optional), and only those will be exported
+   ([incompatible types will be skipped](#warning))
 
 ```rust
 // quick: make a scene with all entities that match a given query filter
@@ -52,7 +79,8 @@ commands.spawn_bundle(DynamicSceneBundle {
 
 If you want more flexibility, you can use `SceneBuilder`, which lets you
 accumulate multiple selections incrementally, and then create a scene with
-everything you added.
+everything you added. The component selection can be controlled with
+per-entity granularity.
 
 ```rust
 let mut builder = SceneBuilder::new(&mut world);
@@ -91,7 +119,7 @@ let my_scene = builder.build_scene();
 **Warning!** You *must* ensure that your component types:
  - impl `Reflect`
  - reflect `Component`
- - be registered in the type registry
+ - are registered in the type registry
 
 Otherwise, they will be silently ignored, and will be missing from your scene!
 
@@ -119,10 +147,9 @@ If you are using Bevy release 0.8, note that it is missing support for
 reflecting `enum`s. Many common component types are Rust `enum`s, so that
 greatly limits what kinds of entities/data you can have in your scenes.
 
-This is incredibly unfortunate, but Bevy maintainers decided to omit it from
-the release, because the release was late behind schedule.
-
-Enum reflection support was merged into Bevy shortly after the release.
+Bevy maintainers decided to omit it from 0.8, because the release was late
+behind schedule. Enum reflection support was merged into Bevy shortly after
+the release.
 
 If you use Bevy `main`, it is supported.
 
@@ -158,6 +185,21 @@ bevy_time = { path = "../bevy/crates/bevy_time" }
 bevy_utils = { path = "../bevy/crates/bevy_utils" }
 bevy_asset = { path = "../bevy/crates/bevy_asset" }
 # … and any others (refer to your dependencies' Cargo.toml) …
+```
+
+Alternatively, if you'd like, I also offer a 0.8-compatible branch with
+reflection improvements, which has the above already set up for you:
+
+```sh
+git clone https://github.com/IyesGames/bevy
+git checkout 0.8+reflect
+```
+
+or to use it directly from cargo:
+
+```toml
+[patch.crates-io]
+bevy = { git = "https://github.com/IyesGames/bevy", branch = "0.8+reflect" }
 ```
 
 ## "Blueprints" Pattern
