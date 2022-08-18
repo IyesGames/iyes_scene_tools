@@ -80,3 +80,77 @@ builder.add_components_to_entities::<
 // now that we have selected everything, make a scene from it!
 let my_scene = builder.build_scene();
 ```
+
+### Warning
+
+**Warning!** You *must* ensure that your component types:
+ - impl `Reflect`
+ - reflect `Component`
+ - be registered in the type registry
+
+Otherwise, they will be silently ignored, and will be missing from your scene!
+
+If you are serializing your scenes to asset files, you probably also want
+`FromReflect`, or otherwise you will not be able to load your scenes later!
+
+```rust
+#[derive(Component, Default, Reflect, FromReflect)]
+#[reflect(Component)]
+struct MyComponent;
+```
+
+(note: Bevy requires either a `FromWorld` or a `Default` impl, to derive `Reflect`)
+
+```rust
+app.register_type::<MyComponent>();
+```
+
+This is required boilerplate, for all components that you want to use
+with scenes! Otherwise, things will silently not work.
+
+### Enum Support
+
+If you are using Bevy release 0.8, note that it is missing support for
+reflecting `enum`s. Many common component types are Rust `enum`s, so that
+greatly limits what kinds of entities/data you can have in your scenes.
+
+This is incredibly unfortunate, but Bevy maintainers decided to omit it from
+the release, because the release was late behind schedule.
+
+Enum reflection support was merged into Bevy shortly after the release.
+
+If you use Bevy `main`, it is supported.
+
+Otherwise, if you want to use Bevy release 0.8, but add enum support, you could:
+ - fork bevy (just locally clone the repo, or fork on github)
+ - point it at the `v0.8.0` tag
+ - cherry-pick commit `15826d6`
+ - add a `patch` section to your `Cargo.toml`,
+   so that 3rd-party plugins (incl this crate) use your Bevy
+
+(All your 3rd-party plugins should still be compatible. This change is unlikely
+to break anything.)
+
+Example:
+
+```sh
+git clone https://github.com/bevyengine/bevy # (or your fork URL)
+cd bevy
+git checkout v0.8.0
+git cherry-pick 15826d6
+```
+
+In your `Cargo.toml`:
+
+```toml
+[patch.crates-io]
+bevy = { path = "../bevy" }
+
+# for some other plugins, you might have to patch individual bevy crates:
+bevy_ecs = { path = "../bevy/crates/bevy_ecs" }
+bevy_app = { path = "../bevy/crates/bevy_app" }
+bevy_time = { path = "../bevy/crates/bevy_time" }
+bevy_utils = { path = "../bevy/crates/bevy_utils" }
+bevy_asset = { path = "../bevy/crates/bevy_asset" }
+# … and any others (refer to your dependencies' Cargo.toml) …
+```
