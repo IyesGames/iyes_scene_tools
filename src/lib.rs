@@ -1,12 +1,24 @@
+use std::path::Path;
+
+use bevy::prelude::*;
 use bevy::ecs::all_tuples;
 use bevy::ecs::system::SystemState;
-use bevy::prelude::*;
-
 use bevy::ecs::component::ComponentId;
 use bevy::ecs::query::ReadOnlyWorldQuery;
 use bevy::reflect::TypeRegistry;
 use bevy::scene::DynamicEntity;
 use bevy::utils::{HashMap, HashSet};
+
+use thiserror::Error;
+
+/// Error when exporting scene to a file
+#[derive(Error, Debug)]
+pub enum SceneExportError {
+    #[error("Bevy Scene serialization to RON format failed")]
+    Ron(#[from] ron::Error),
+    #[error("Error writing to output file")]
+    Io(#[from] std::io::Error),
+}
 
 /// Create a Bevy Dynamic Scene with specific entities and components.
 ///
@@ -28,7 +40,11 @@ where
     F: ReadOnlyWorldQuery + 'static,
 {
     let mut ss = SystemState::<Query<Entity, (Q::QueryFilter, F)>>::new(world);
-    let type_registry = world.get_resource::<TypeRegistry>().unwrap().read();
+
+    let type_registry = world.get_resource::<TypeRegistry>()
+        .expect("The World provided for scene generation does not contain a TypeRegistry")
+        .read();
+
     let q = ss.get(world);
 
     let entities = q.iter().map(|entity| {
@@ -59,6 +75,28 @@ where
     }
 }
 
+/// Convenience wrapper for [`scene_from_query_components`] to output to file
+///
+/// Creates a file in the Bevy Scene RON format. Path should end in `.scn.ron`.
+///
+/// On success (if both scene generation and file output succeed), will return
+/// the generated [`DynamicScene`], just in case you need it.
+pub fn scene_file_from_query_components<Q, F>(
+    world: &mut World,
+    path: impl AsRef<Path>,
+) -> Result<DynamicScene, SceneExportError>
+where
+    Q: ComponentList,
+    F: ReadOnlyWorldQuery + 'static,
+{
+    let scene = scene_from_query_components::<Q, F>(world);
+    let type_registry = world.get_resource::<TypeRegistry>()
+        .expect("The World provided for scene generation does not contain a TypeRegistry");
+    let data = scene.serialize_ron(type_registry)?;
+    std::fs::write(path, &data)?;
+    Ok(scene)
+}
+
 /// Create a Bevy Dynamic Scene with specific entities.
 ///
 /// The generic parameter is used as a `Query` filter.
@@ -78,7 +116,11 @@ where
     F: ReadOnlyWorldQuery + 'static,
 {
     let mut ss = SystemState::<Query<Entity, F>>::new(world);
-    let type_registry = world.get_resource::<TypeRegistry>().unwrap().read();
+
+    let type_registry = world.get_resource::<TypeRegistry>()
+        .expect("The World provided for scene generation does not contain a TypeRegistry")
+        .read();
+
     let q = ss.get(world);
 
     let entities = q.iter().map(|entity| {
@@ -107,6 +149,27 @@ where
     DynamicScene {
         entities,
     }
+}
+
+/// Convenience wrapper for [`scene_from_query_filter`] to output to file
+///
+/// Creates a file in the Bevy Scene RON format. Path should end in `.scn.ron`.
+///
+/// On success (if both scene generation and file output succeed), will return
+/// the generated [`DynamicScene`], just in case you need it.
+pub fn scene_file_from_query_filter<F>(
+    world: &mut World,
+    path: impl AsRef<Path>,
+) -> Result<DynamicScene, SceneExportError>
+where
+    F: ReadOnlyWorldQuery + 'static,
+{
+    let scene = scene_from_query_filter::<F>(world);
+    let type_registry = world.get_resource::<TypeRegistry>()
+        .expect("The World provided for scene generation does not contain a TypeRegistry");
+    let data = scene.serialize_ron(type_registry)?;
+    std::fs::write(path, &data)?;
+    Ok(scene)
 }
 
 enum ComponentSelection {
@@ -304,7 +367,9 @@ impl<'w> SceneBuilder<'w> {
     /// All the relevant data will be copied from the `World` that was provided
     /// when the [`SceneBuilder`] was created.
     pub fn build_scene(&self) -> DynamicScene {
-        let type_registry = self.world.get_resource::<TypeRegistry>().unwrap().read();
+        let type_registry = self.world.get_resource::<TypeRegistry>()
+            .expect("The World provided to the SceneBuilder does not contain a TypeRegistry")
+            .read();
 
         let entities = self.ec.iter().map(|(entity, csel)| {
             let get_reflect_by_id = |id|
@@ -343,6 +408,21 @@ impl<'w> SceneBuilder<'w> {
         DynamicScene {
             entities,
         }
+    }
+
+    /// Convenience method: build the scene and serialize to file
+    ///
+    /// Creates a file in the Bevy Scene RON format. Path should end in `.scn.ron`.
+    ///
+    /// On success (if both scene generation and file output succeed), will return
+    /// the generated [`DynamicScene`], just in case you need it.
+    pub fn export_to_file(&self, path: impl AsRef<Path>) -> Result<DynamicScene, SceneExportError> {
+        let scene = self.build_scene();
+        let type_registry = self.world.get_resource::<TypeRegistry>()
+            .expect("The World provided to the SceneBuilder does not contain a TypeRegistry");
+        let data = scene.serialize_ron(type_registry)?;
+        std::fs::write(path, &data)?;
+        Ok(scene)
     }
 }
 
