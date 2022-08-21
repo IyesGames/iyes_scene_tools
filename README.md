@@ -338,9 +338,12 @@ builder.add_from_query_filter::<With<Player>>();
 builder.add_from_query_filter::<With<Powerup>>();
 // …
 
-// for our UI Nodes, only persist `Style`, `UiColor`, `Text`, `Button`
+// for our UI Nodes, only persist hierarchy + `Style`, `UiColor`, `Text`, `Button`
 builder.add_with_components::<
-    (&Style, &UiColor, Option<&Text>, Option<&Button>),
+    (
+      (Option<&Parent>, Option<&Children>),
+      (&Style, &UiColor, Option<&Text>, Option<&Button>),
+    ),
     With<Node>
 >();
 
