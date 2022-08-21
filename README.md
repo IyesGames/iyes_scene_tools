@@ -18,20 +18,19 @@ You can use Scenes for many use cases:
  - Saving game state
  - …
 
-Until now, creating Bevy scenes, and working with the Bevy
-scene format, was very unapproachable. While Bevy makes
-it easy to use existing scenes in your game (just spawn them with
-[`DynamicSceneBundle`](https://docs.rs/bevy/latest/bevy/scene/struct.DynamicSceneBundle.html)),
-there was no easy way to create them. Bevy offers nothing built-in for easily
-exporting things into a scene, and no APIs to help you create your scenes.
+Until now, creating Bevy scenes, and working with the Bevy scene format,
+was very unapproachable. While Bevy makes it easy to use existing scenes in
+your game (just spawn them with [`DynamicSceneBundle`]), there was no easy
+way to create them. Bevy offers nothing built-in for easily exporting things
+into a scene, and no APIs to help you create your scenes.
 
 Thanks to this crate, you can now easily create your own scenes, containing
 whatever you want, by exporting a custom selection of things from any Bevy app!
 
 ## Scene Export
 
-You can create Bevy [`DynamicScene`](https://docs.rs/bevy/latest/bevy/scene/struct.DynamicScene.html)s
-that include whatever exact selection of entities and components you want!
+You can create Bevy [`DynamicScene`]s that include whatever exact selection
+of entities and components you want!
 
 The selections can be done with a syntax similar to Bevy Queries.
 
@@ -65,37 +64,7 @@ let my_scene = scene_from_query_components::<
 >(&mut world);
 ```
 
-If you would like to serialize it (say, to create scene asset files):
-
-```rust
-// need the type registry
-let type_registry = world.resource::<TypeRegistry>();
-
-// output the contents as a String
-let data = my_scene.serialize_ron(type_registry).unwrap();
-
-// create a scene file (ending in `.scn.ron`)
-match std::fs::write(&path, &data) {
-    Ok(()) => info!("Scene Saved to {:?}", path),
-    Err(e) => error!("Could not save scene to {:?}: {}", path, e),
-}
-```
-
-Or if you just want to use it directly:
-
-```rust
-// or add it to your app's assets, so you can use it
-// (using `ResMut<Assets<DynamicScene>>`)
-let handle = assets.add(my_scene);
-
-// spawn it
-commands.spawn_bundle(DynamicSceneBundle {
-    scene: handle,
-    ..default()
-});
-```
-
-If you want more flexibility, you can use `SceneBuilder`, which lets you
+If you want more flexibility, you can use [`SceneBuilder`], which lets you
 accumulate multiple selections incrementally, and then create a scene with
 everything you added. The component selection can be controlled with
 per-entity granularity.
@@ -130,6 +99,110 @@ builder.ignore_components::<(&GlobalTransform, &ComputedVisibility)>();
 
 // now that we have selected everything, make a scene from it!
 let my_scene = builder.build_scene();
+```
+
+### Exporting to scene asset files
+
+The above examples will create a [`DynamicScene`] instance. However, if you
+are simply interested in creating asset files, there are convenience methods
+for exporting directly to a Bevy Scene RON Asset file:
+
+```rust
+// the standalone (simple) functions:
+
+// like `scene_from_query_components`, but takes a file path
+scene_file_from_query_components::</* … */>(world, "my_scene.scn.ron")
+    .expect("Scene file output failed");
+
+// like `scene_from_query_filter`, but takes a file path
+scene_file_from_query_filter::</* … */>(world, "my_scene2.scn.ron")
+    .expect("Scene file output failed");
+
+// for `SceneBuilder`:
+let mut builder = SceneBuilder::new(world);
+// ... add stuff ...
+// instead of `.build_scene()`:
+builder.export_to_file("fancy_scene.scn.ron")
+    .expect("Scene file output failed");
+```
+
+All of the above methods also return the [`DynamicScene`] in the `Ok` result,
+if the export was successful, in case you also want to do anything else with
+the generated scene.
+
+If you prefer not to use the convenience file export methods, you can output
+to a scene asset file manually like this:
+
+```rust
+// create the scene, using any of the methods shown before
+let my_scene = /* ... */;
+// need the type registry
+let type_registry = world.resource::<TypeRegistry>();
+// output the contents as a String
+let data = my_scene.serialize_ron(type_registry)
+    .expect("Scene serialization failed");
+// create a scene file (ending in `.scn.ron`)
+std::fs::write("file.scn.ron", &data)
+    .expect("Writing to file failed");
+```
+
+### Directly using a generated scene
+
+If you want to generate a scene and use it straight away, without
+exporting/loading asset files, here is how.
+
+To use the generated scene in your app, it needs to be added to the app's
+assets (the `Assets<DynamicScene>` resource), to get a handle.
+
+There are convenience methods to do this for you, which return
+`Handle<DynamicScene>` instead of the bare `DynamicScene`.
+
+```rust
+// the standalone (simple) functions:
+
+// like `scene_from_query_components`, but adds it to the app for you
+let handle = add_scene_from_query_components::</* … */>(world);
+
+// like `scene_from_query_filter`, but adds it to the app for you
+let handle = add_scene_from_query_filter::</* … */>(world);
+
+// for `SceneBuilder`:
+let mut builder = SceneBuilder::new(world);
+// … add stuff …
+// instead of `.build_scene()`:
+let handle = builder.build_scene_and_add();
+```
+
+If you want to do it manually without the helper functions:
+
+```rust
+// get the `Assets<DynamicScene>` resource:
+// (if we are in an exclusive system)
+let mut assets = world.resource_mut::<Assets<DynamicScene>>();
+// (in a regular system, you can use `ResMut<Assets<DynamicScene>>`)
+
+// add it
+let handle = assets.add(my_scene);
+```
+
+Later, you can spawn your scene from anywhere.
+
+From a regular system:
+
+```rust
+commands.spawn_bundle(DynamicSceneBundle {
+    scene: handle,
+    ..default()
+});
+```
+
+With direct World access:
+
+```rust
+world.spawn().insert_bundle(DynamicSceneBundle {
+    scene: handle,
+    ..default()
+});
 ```
 
 ### Warning
@@ -325,3 +398,8 @@ fn setup_ui(
     }
 }
 ```
+
+
+[`DynamicScene`]: https://docs.rs/bevy/latest/bevy/scene/struct.DynamicScene.html
+[`DynamicSceneBundle`]: https://docs.rs/bevy/latest/bevy/scene/struct.DynamicSceneBundle.html
+[`SceneBuilder`]: https://docs.rs/iyes_scene_tools/latest/iyes_scene_tools/struct.SceneBuilder.html
