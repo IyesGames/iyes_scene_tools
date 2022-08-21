@@ -6,6 +6,12 @@ Version compatibility table:
 |------------|-------------|
 |`0.8`       |`0.1`        |
 
+## Known Issues
+
+Bevy 0.8 has some reflection issues, see here for solutions:
+ - [`enum` support](#enum-support)
+ - [error: missing type registration for Affine3A](#math-types)
+
 ## What is this about?
 
 For the uninitiated: Bevy Scenes are a way to store some predefined Bevy ECS
@@ -231,6 +237,19 @@ app.register_type::<MyComponent>();
 
 This is required boilerplate, for all components that you want to use
 with scenes! Otherwise, things will silently not work.
+
+## Issues with Bevy 0.8
+
+### Math Types
+
+If you are exporting entities with `GlobalTransform` components, you will
+get an error about a missing type registration for `Affine3A`.
+
+Add this to workaround the issue:
+
+```rust
+app.register_type::<bevy::math::Affine3A>();
+```
 
 ### Enum Support
 
