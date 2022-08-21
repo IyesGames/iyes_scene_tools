@@ -97,6 +97,22 @@ where
     Ok(scene)
 }
 
+/// Convenience wrapper for [`scene_from_query_components`] to add the scene to the app's assets collection
+///
+/// Returns an asset handle that can be used for spawning the scene, (with [`DynamicSceneBundle`]).
+pub fn add_scene_from_query_components<Q, F>(
+    world: &mut World,
+) -> Handle<DynamicScene>
+where
+    Q: ComponentList,
+    F: ReadOnlyWorldQuery + 'static,
+{
+    let scene = scene_from_query_components::<Q, F>(world);
+    let mut assets = world.get_resource_mut::<Assets<DynamicScene>>()
+        .expect("World does not have an Assets<DynamicScene> to add the new scene to");
+    assets.add(scene)
+}
+
 /// Create a Bevy Dynamic Scene with specific entities.
 ///
 /// The generic parameter is used as a `Query` filter.
@@ -170,6 +186,21 @@ where
     let data = scene.serialize_ron(type_registry)?;
     std::fs::write(path, &data)?;
     Ok(scene)
+}
+
+/// Convenience wrapper for [`scene_from_query_filter`] to add the scene to the app's assets collection
+///
+/// Returns an asset handle that can be used for spawning the scene, (with [`DynamicSceneBundle`]).
+pub fn add_scene_from_query_filter<F>(
+    world: &mut World,
+) -> Handle<DynamicScene>
+where
+    F: ReadOnlyWorldQuery + 'static,
+{
+    let scene = scene_from_query_filter::<F>(world);
+    let mut assets = world.get_resource_mut::<Assets<DynamicScene>>()
+        .expect("World does not have an Assets<DynamicScene> to add the new scene to");
+    assets.add(scene)
 }
 
 enum ComponentSelection {
@@ -423,6 +454,16 @@ impl<'w> SceneBuilder<'w> {
         let data = scene.serialize_ron(type_registry)?;
         std::fs::write(path, &data)?;
         Ok(scene)
+    }
+
+    /// Convenience method: build the scene and add to the app's asset collection
+    ///
+    /// Returns an asset handle that can be used for spawning the scene, (with [`DynamicSceneBundle`]).
+    pub fn build_scene_and_add(&mut self) -> Handle<DynamicScene> {
+        let scene = self.build_scene();
+        let mut assets = self.world.get_resource_mut::<Assets<DynamicScene>>()
+            .expect("World does not have an Assets<DynamicScene> to add the new scene to");
+        assets.add(scene)
     }
 }
 
