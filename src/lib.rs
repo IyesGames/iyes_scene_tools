@@ -57,8 +57,8 @@ where
                 .map(|c| c.clone_value());
 
         // TODO: avoid this allocation somehow?
-        let mut ids = Vec::new();
-        Q::do_component_ids(world, &mut |id| ids.push(id));
+        let mut ids = HashSet::new();
+        Q::do_component_ids(world, &mut |id| {ids.insert(id);});
 
         let components = ids.into_iter()
             .filter_map(get_reflect_by_id)
