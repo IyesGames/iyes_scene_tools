@@ -4,13 +4,8 @@ Version compatibility table:
 
 |Bevy Version|Crate Version|
 |------------|-------------|
+|`0.9`       |`0.2`        |
 |`0.8`       |`0.1`        |
-
-## Known Issues
-
-Bevy 0.8 has some reflection issues, see here for solutions:
- - [`enum` support](#enum-support)
- - [error: missing type registration for Affine3A](#math-types)
 
 ## What is this about?
 
@@ -238,80 +233,6 @@ app.register_type::<MyComponent>();
 This is required boilerplate, for all components that you want to use
 with scenes! Otherwise, things will silently not work.
 
-## Issues with Bevy 0.8
-
-### Math Types
-
-If you are exporting entities with `GlobalTransform` components, you will
-get an error about a missing type registration for `Affine3A`.
-
-Add this to workaround the issue:
-
-```rust
-app.register_type::<bevy::math::Affine3A>();
-```
-
-### Enum Support
-
-If you are using Bevy release 0.8, note that it is missing support for
-reflecting `enum`s. Many common component types are Rust `enum`s, so that
-greatly limits what kinds of entities/data you can have in your scenes.
-
-Bevy maintainers decided to omit it from 0.8, because the release was late
-behind schedule. Enum reflection support was merged into Bevy shortly after
-the release.
-
-If you use Bevy `main`, it is supported.
-
-Otherwise, if you want to use Bevy release 0.8, but add enum support, you could:
- - fork bevy (just locally clone the repo, or fork on github)
- - point it at the `v0.8.0` tag
- - cherry-pick commit `15826d6`
- - add a `patch` section to your `Cargo.toml`,
-   so that 3rd-party plugins (incl this crate) use your Bevy
-
-(All your 3rd-party plugins should still be compatible. This change is unlikely
-to break anything.)
-
-Example:
-
-```sh
-git clone https://github.com/bevyengine/bevy # (or your fork URL)
-cd bevy
-git checkout v0.8.0
-git cherry-pick 15826d6
-```
-
-In your `Cargo.toml`:
-
-```toml
-[patch.crates-io]
-bevy = { path = "../bevy" }
-
-# for some other plugins, you might have to patch individual bevy crates:
-bevy_ecs = { path = "../bevy/crates/bevy_ecs" }
-bevy_app = { path = "../bevy/crates/bevy_app" }
-bevy_time = { path = "../bevy/crates/bevy_time" }
-bevy_utils = { path = "../bevy/crates/bevy_utils" }
-bevy_asset = { path = "../bevy/crates/bevy_asset" }
-# … and any others (refer to your dependencies' Cargo.toml) …
-```
-
-Alternatively, if you'd like, I also offer a 0.8-compatible branch with
-reflection improvements, which has the above already set up for you:
-
-```sh
-git clone https://github.com/IyesGames/bevy
-git checkout 0.8+reflect
-```
-
-or to use it directly from cargo:
-
-```toml
-[patch.crates-io]
-bevy = { git = "https://github.com/IyesGames/bevy", branch = "0.8+reflect" }
-```
-
 ## "Blueprints" Pattern
 
 This is a recommendation for how to make your workflow more flexible, and
@@ -420,7 +341,6 @@ fn setup_ui(
     }
 }
 ```
-
 
 [`DynamicScene`]: https://docs.rs/bevy/latest/bevy/scene/struct.DynamicScene.html
 [`DynamicSceneBundle`]: https://docs.rs/bevy/latest/bevy/scene/struct.DynamicSceneBundle.html

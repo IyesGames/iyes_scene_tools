@@ -5,7 +5,6 @@ use bevy::ecs::all_tuples;
 use bevy::ecs::system::SystemState;
 use bevy::ecs::component::ComponentId;
 use bevy::ecs::query::ReadOnlyWorldQuery;
-use bevy::reflect::TypeRegistry;
 use bevy::scene::DynamicEntity;
 use bevy::utils::{HashMap, HashSet};
 
@@ -41,7 +40,7 @@ where
 {
     let mut ss = SystemState::<Query<Entity, (Q::QueryFilter, F)>>::new(world);
 
-    let type_registry = world.get_resource::<TypeRegistry>()
+    let type_registry = world.get_resource::<AppTypeRegistry>()
         .expect("The World provided for scene generation does not contain a TypeRegistry")
         .read();
 
@@ -65,7 +64,7 @@ where
             .collect();
 
         DynamicEntity {
-            entity: entity.id(),
+            entity: entity.index(),
             components,
         }
     }).collect();
@@ -90,7 +89,7 @@ where
     F: ReadOnlyWorldQuery + 'static,
 {
     let scene = scene_from_query_components::<Q, F>(world);
-    let type_registry = world.get_resource::<TypeRegistry>()
+    let type_registry = world.get_resource::<AppTypeRegistry>()
         .expect("The World provided for scene generation does not contain a TypeRegistry");
     let data = scene.serialize_ron(type_registry)?;
     std::fs::write(path, &data)?;
@@ -133,7 +132,7 @@ where
 {
     let mut ss = SystemState::<Query<Entity, F>>::new(world);
 
-    let type_registry = world.get_resource::<TypeRegistry>()
+    let type_registry = world.get_resource::<AppTypeRegistry>()
         .expect("The World provided for scene generation does not contain a TypeRegistry")
         .read();
 
@@ -157,7 +156,7 @@ where
             .collect();
 
         DynamicEntity {
-            entity: entity.id(),
+            entity: entity.index(),
             components,
         }
     }).collect();
@@ -181,7 +180,7 @@ where
     F: ReadOnlyWorldQuery + 'static,
 {
     let scene = scene_from_query_filter::<F>(world);
-    let type_registry = world.get_resource::<TypeRegistry>()
+    let type_registry = world.get_resource::<AppTypeRegistry>()
         .expect("The World provided for scene generation does not contain a TypeRegistry");
     let data = scene.serialize_ron(type_registry)?;
     std::fs::write(path, &data)?;
@@ -398,7 +397,7 @@ impl<'w> SceneBuilder<'w> {
     /// All the relevant data will be copied from the `World` that was provided
     /// when the [`SceneBuilder`] was created.
     pub fn build_scene(&self) -> DynamicScene {
-        let type_registry = self.world.get_resource::<TypeRegistry>()
+        let type_registry = self.world.get_resource::<AppTypeRegistry>()
             .expect("The World provided to the SceneBuilder does not contain a TypeRegistry")
             .read();
 
@@ -431,7 +430,7 @@ impl<'w> SceneBuilder<'w> {
             };
 
             DynamicEntity {
-                entity: entity.id(),
+                entity: entity.index(),
                 components,
             }
         }).collect();
@@ -449,7 +448,7 @@ impl<'w> SceneBuilder<'w> {
     /// the generated [`DynamicScene`], just in case you need it.
     pub fn export_to_file(&self, path: impl AsRef<Path>) -> Result<DynamicScene, SceneExportError> {
         let scene = self.build_scene();
-        let type_registry = self.world.get_resource::<TypeRegistry>()
+        let type_registry = self.world.get_resource::<AppTypeRegistry>()
             .expect("The World provided to the SceneBuilder does not contain a TypeRegistry");
         let data = scene.serialize_ron(type_registry)?;
         std::fs::write(path, &data)?;

@@ -2,6 +2,11 @@
 
 Notable user-facing changes with each release version will be described in this file.
 
+## [0.2.0]: 2022-11-19
+
+## Changed
+ - Bevy 0.9 compatibility
+
 ## [0.1.1]: 2022-08-21
 
 ### Added
@@ -18,5 +23,6 @@ Notable user-facing changes with each release version will be described in this 
 
 Initial Release
 
+[0.2.0]: https://github.com/IyesGames/iyes_scene_tools/tree/v0.2.0
 [0.1.1]: https://github.com/IyesGames/iyes_scene_tools/tree/v0.1.1
 [0.1.0]: https://github.com/IyesGames/iyes_scene_tools/tree/v0.1.0

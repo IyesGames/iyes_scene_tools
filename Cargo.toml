@@ -1,6 +1,6 @@
 [package]
 name = "iyes_scene_tools"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 description = "Extra helpers for working with Bevy Scenes"
 license = "MIT OR Apache-2.0"
@@ -11,12 +11,12 @@ categories = ["game-engines"]
 exclude = ["assets"]
 
 [dependencies]
-thiserror = "1.0.32"
-ron = "0.7.1"
+thiserror = "1.0.37"
+ron = "0.8.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies.bevy]
-version = "0.8"
+version = "0.9"
 default-features = false
 features = [ "bevy_scene", "bevy_asset" ]
