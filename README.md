@@ -4,6 +4,7 @@ Version compatibility table:
 
 |Bevy Version|Crate Version|
 |------------|-------------|
+|`0.10`      |`main`       |
 |`0.9`       |`0.2`        |
 |`0.8`       |`0.1`        |
 
@@ -19,14 +20,15 @@ You can use Scenes for many use cases:
  - Saving game state
  - …
 
-Until now, creating Bevy scenes, and working with the Bevy scene format,
-was very unapproachable. While Bevy makes it easy to use existing scenes in
-your game (just spawn them with [`DynamicSceneBundle`]), there was no easy
-way to create them. Bevy offers nothing built-in for easily exporting things
-into a scene, and no APIs to help you create your scenes.
+Creating Bevy scenes, and working with the Bevy scene format, can be difficult
+unapproachable. While Bevy makes it easy to use existing scenes in your game
+(just spawn them with [`DynamicSceneBundle`]), creating/exporting such data is
+something opinionated and Bevy's APIs might not be flexible enough for some use
+cases.
 
-Thanks to this crate, you can now easily create your own scenes, containing
-whatever you want, by exporting a custom selection of things from any Bevy app!
+The goal of this crate is to provide alternative APIs for creating Bevy scene
+files. Your scenes can include whatever you want, by exporting a custom
+selection of things from any Bevy app!
 
 ## Scene Export
 
