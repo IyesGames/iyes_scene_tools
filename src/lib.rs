@@ -52,7 +52,7 @@ where
                 .get_info(id)
                 .and_then(|info| type_registry.get(info.type_id().unwrap()))
                 .and_then(|reg| reg.data::<ReflectComponent>())
-                .and_then(|rc| rc.reflect(world, entity))
+                .and_then(|rc| rc.reflect(world.entity(entity)))
                 .map(|c| c.clone_value());
 
         // TODO: avoid this allocation somehow?
@@ -144,7 +144,7 @@ where
                 .get_info(id)
                 .and_then(|info| type_registry.get(info.type_id().unwrap()))
                 .and_then(|reg| reg.data::<ReflectComponent>())
-                .and_then(|rc| rc.reflect(world, entity))
+                .and_then(|rc| rc.reflect(world.entity(entity)))
                 .map(|c| c.clone_value());
 
         let components = world.entities()
@@ -407,7 +407,7 @@ impl<'w> SceneBuilder<'w> {
                     .get_info(id)
                     .and_then(|info| type_registry.get(info.type_id().unwrap()))
                     .and_then(|reg| reg.data::<ReflectComponent>())
-                    .and_then(|rc| rc.reflect(self.world, *entity))
+                    .and_then(|rc| rc.reflect(self.world.entity(*entity)))
                     .map(|c| c.clone_value());
 
             let components = match csel {
